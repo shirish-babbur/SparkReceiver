@@ -5,8 +5,11 @@ import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.sql._
+import org.apache.spark.sql.Column
 import org.apache.spark.sql.functions._
-
+import com.datastax.spark.connector._
+import org.apache.spark.sql.cassandra._
+import org.apache.spark.sql.types._
 
 object SparkReceiver {
   val topic = "test-1"
@@ -26,7 +29,17 @@ object SparkReceiver {
         import spark.implicits._
         val tweet = sqlContext.jsonRDD(rdd)
         val df = tweet.toDF()
-        df.withColumn("hashs", explode($"entities.hashtags")).filter($"hashs".isNotNull).select("hashs.text").show()
+        val keys = udf[Seq[String], Map[String, Row]](_.keys.toSeq)
+        println("******************")
+        df.withColumn("hashs", explode($"entities.hashtags")).printSchema
+        println("******************")
+        val tags = df.withColumn("hashs", explode($"entities.hashtags")).filter($"hashs".isNotNull)
+                    .select("id","timestamp_ms","user.name","geo","hashs.text").groupBy("id","timestamp_ms","name","geo")
+                    .agg(collect_list("text").as("hashtags"))
+        val text = df.select("id","text")
+        val tweetdf = tags.join(text,"id")
+        tweetdf.show()
+        //data.saveToCassandra("test","data",SomeColumns("key","value"))
       }
     }
     context.start()
