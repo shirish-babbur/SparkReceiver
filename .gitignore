@@ -2,3 +2,5 @@
 /project/*
 *.log
 /metastore_db/*
+.idea/*
+SparkReceiver.iml
