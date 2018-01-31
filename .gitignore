@@ -2,5 +2,14 @@
 /project/*
 *.log
 /metastore_db/*
-.idea/*
+.ideas/*
 SparkReceiver.iml
+.part*
+.idea/*
+_*
+commits/
+metadata
+.metadata.crc
+offsets/*
+sources
+data(1).json
