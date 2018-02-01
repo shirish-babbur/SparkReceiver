@@ -1,4 +1,4 @@
-import org.apache.spark.SparkConf
+/*import org.apache.spark.SparkConf
 import org.apache.spark.rdd._
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.Seconds
@@ -36,7 +36,7 @@ object SparkReceiverUnstructured {
                 .agg(collect_list("hashtags").as("hashtags"))
   }
 
-  def main(args: Array[String])={
+  def main(args: Array[String]) = {
   val conf = new SparkConf().setAppName("SparkReceiver").setMaster("local[2]")
   val context = new StreamingContext(conf,Seconds(2))
   val kafkaStream = prepareStream(context)
@@ -62,3 +62,4 @@ object SparkReceiverUnstructured {
   context.start()
   context.awaitTermination()
 }
+}*/

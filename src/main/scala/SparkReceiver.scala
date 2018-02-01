@@ -14,7 +14,7 @@ object SparkReceiver {
   val topic = "test-1"
   val broker = "localhost:9092"
 
-  def getDataFrame(spark: SparkSession,stream: DataFrame,schema: StructType) ={}
+  def getDataFrame(spark: SparkSession,stream: DataFrame,schema: StructType) ={
     import spark.implicits._
     val data = stream.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
               .as[(String, String)].map(_._2)
@@ -22,16 +22,22 @@ object SparkReceiver {
   }
 
   def buildPipeline(tweet: DataFrame) = {
-    tweet.filter(size(col("entities.hashtags")) > 0).withColumn("hashs", explode(col("entities.hashtags")))
-                .filter(col("hashs").isNotNull && col("user.location").isNotNull && col("user.location")
-                .contains("India") && col("retweeted").contains("false")).select(col("id"),col("user.name"),col("user.location"),col("geo"),
-                col("hashs.text").alias("hashtags"),col("retweeted"),col("retweet_count"),col("text").alias("tweet"),col("created_at"))
-                .groupBy("id","created_at","name","location","geo","retweeted","retweet_count","tweet")
-                .agg(collect_list("hashtags").as("hashtags"))
+     tweet.filter(size(col("entities.hashtags")) > 0).withColumn("hashs", explode(col("entities.hashtags")))
+                .filter(col("hashs").isNotNull && col("user.location").isNotNull && col("retweeted")
+                .contains("false")).select(col("id"),col("user.name"),col("user.location"),col("geo"),
+                col("hashs.text").alias("hashtags"),col("retweeted"),col("retweet_count"),col("text")
+                .alias("tweet"),hour(to_timestamp(col("created_at"),"EEE MMM dd HH:mm:ss Z yyyy"))
+                .alias("hr")).groupBy("hr","location").count()
+                /*.groupBy("id","created_at","name","location",
+                  "geo","retweeted","retweet_count","tweet").agg(collect_list("hashtags").as("hashtags"))
+                  */
   }
 
   def main(args: Array[String]) = {
-    val spark = SparkSession.builder.appName("SparkDataProcessor").getOrCreate()
+    val spark = SparkSession.builder
+                .master("spark://sachin-GA-880GM-USB3:7077")
+                .appName("SparkDataProcessor")
+                .getOrCreate()
     val schema = spark.read.json("test.json").schema
     val stream = spark
                 .readStream
